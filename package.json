@@ -28,7 +28,8 @@
   "dependencies": {
     "async": "^2.6.4",
     "lodash": "^4.17.4",
-    "mysql": "^2.1.0"
+    "mysql": "^2.1.0",
+    "sprintf-js": "^1.1.2"
   },
   "peerDependencies": {
     "@themost/common": "^2",

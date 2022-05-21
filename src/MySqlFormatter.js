@@ -1,5 +1,5 @@
 // MOST Web Framework Codename Zero Gravity Copyright (c) 2017-2022, THEMOST LP All rights reserved
-import util from 'util';
+import { sprintf } from 'sprintf-js';
 import { SqlFormatter } from '@themost/query';
 
 function zeroPad(number, length) {
@@ -48,7 +48,7 @@ class MySqlFormatter extends SqlFormatter {
         const offset = val.getTimezoneOffset(), timezone = (offset <= 0 ? '+' : '-') + zeroPad(-Math.floor(offset / 60), 2) + ':' + zeroPad(offset % 60, 2);
         const datetime = year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
         //convert timestamp to mysql server timezone (by using date object timezone offset)
-        return util.format('CONVERT_TZ(\'%s\',\'%s\', @@session.time_zone)', datetime, timezone);
+        return sprintf('CONVERT_TZ(\'%s\',\'%s\', @@session.time_zone)', datetime, timezone);
     }
 }
 

@@ -1,7 +1,7 @@
 // MOST Web Framework Codename Zero Gravity Copyright (c) 2017-2022, THEMOST LP All rights reserved
 import mysql from 'mysql';
 import async from 'async';
-import util from 'util';
+import { sprintf } from 'sprintf-js';
 import _ from 'lodash';
 import { QueryExpression, QueryField } from '@themost/query';
 import { TraceUtils } from '@themost/common';
@@ -276,7 +276,7 @@ class MySqlAdapter {
                     //execute raw command
                     self.rawConnection.query(sql, values, function (err, result) {
                         if (process.env.NODE_ENV === 'development') {
-                            TraceUtils.log(util.format('SQL (Execution Time:%sms):%s, Parameters:%s', (new Date()).getTime() - startTime, sql, JSON.stringify(values)));
+                            TraceUtils.log(sprintf('SQL (Execution Time:%sms):%s, Parameters:%s', (new Date()).getTime() - startTime, sql, JSON.stringify(values)));
                         }
                         callback.bind(self)(err, result);
                     });
@@ -326,7 +326,7 @@ class MySqlAdapter {
                 s = 'decimal(19,4)';
                 break;
             case 'Decimal':
-                s = util.format('decimal(%s,%s)', (size > 0 ? size : 19), (scale > 0 ? scale : 8));
+                s = sprintf('decimal(%s,%s)', (size > 0 ? size : 19), (scale > 0 ? scale : 8));
                 break;
             case 'Date':
                 s = 'date';
@@ -339,7 +339,7 @@ class MySqlAdapter {
                 s = 'int(11)';
                 break;
             case 'Duration':
-                s = size > 0 ? util.format('varchar(%s,0)', size) : 'varchar(36)';
+                s = size > 0 ? sprintf('varchar(%s,0)', size) : 'varchar(36)';
                 break;
             case 'URL':
             case 'Text':
@@ -621,9 +621,9 @@ class MySqlAdapter {
                     return MySqlAdapter.format('`%f`', x);
                 }).join(', ');
                 if (strPKFields.length > 0) {
-                    strFields += ', ' + util.format('PRIMARY KEY (%s)', strPKFields);
+                    strFields += ', ' + sprintf('PRIMARY KEY (%s)', strPKFields);
                 }
-                const sql = util.format('CREATE TABLE %s (%s)', name, strFields);
+                const sql = sprintf('CREATE TABLE %s (%s)', name, strFields);
                 self.execute(sql, null, function (err) {
                     callback(err);
                 });
@@ -729,7 +729,7 @@ class MySqlAdapter {
                         if (err) { return callback(err); }
                         const exists = (result[0].count > 0);
                         if (exists) {
-                            const sql = util.format('DROP VIEW `%s`', name);
+                            const sql = sprintf('DROP VIEW `%s`', name);
                             self.execute(sql, undefined, function (err) {
                                 if (err) { callback(err); return; }
                                 callback();
@@ -751,7 +751,7 @@ class MySqlAdapter {
                     thisArg.drop(function (err) {
                         if (err) { tr(err); return; }
                         try {
-                            let sql = util.format('CREATE VIEW `%s` AS ', name);
+                            let sql = sprintf('CREATE VIEW `%s` AS ', name);
                             const formatter = new MySqlFormatter();
                             sql += formatter.format(q);
                             self.execute(sql, [], tr);
@@ -776,7 +776,7 @@ class MySqlAdapter {
                 if (Object.prototype.hasOwnProperty.call(this1, 'indexes_')) {
                     return callback(null, this1['indexes_']);
                 }
-                self.execute(util.format('SHOW INDEXES FROM `%s`', table), null, function (err, result) {
+                self.execute(sprintf('SHOW INDEXES FROM `%s`', table), null, function (err, result) {
                     if (err) { return callback(err); }
                     const indexes = [];
                     _.forEach(result, function (x) {
@@ -816,7 +816,7 @@ class MySqlAdapter {
                     if (err) { return callback(err); }
                     const ix = _.find(indexes, function (x) { return x.name === name; });
                     //format create index SQL statement
-                    const sqlCreateIndex = util.format('CREATE INDEX %s ON %s(%s)',
+                    const sqlCreateIndex = sprintf('CREATE INDEX %s ON %s(%s)',
                         formatter.escapeName(name),
                         formatter.escapeName(table),
                         _.map(cols, function (x) {
@@ -861,7 +861,7 @@ class MySqlAdapter {
                     if (!exists) {
                         return callback();
                     }
-                    self.execute(util.format('DROP INDEX %s ON %s', formatter.escapeName(name), formatter.escapeName(table)), [], callback);
+                    self.execute(sprintf('DROP INDEX %s ON %s', formatter.escapeName(name), formatter.escapeName(table)), [], callback);
                 });
             }
         };
