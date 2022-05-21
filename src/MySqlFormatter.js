@@ -1,3 +1,4 @@
+// MOST Web Framework Codename Zero Gravity Copyright (c) 2017-2022, THEMOST LP All rights reserved
 import util from 'util';
 import { SqlFormatter } from '@themost/query';
 
