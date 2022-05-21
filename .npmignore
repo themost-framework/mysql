@@ -1,0 +1,27 @@
+# tests
+spec
+babel.config.js
+.nycrc.json
+coverage
+.nyc_output
+.env
+
+# eslint
+.eslintrc
+.eslintignore
+
+# gitpod
+.gitpod.dockerfile
+.gitpod.yml
+
+# build
+rollup.config.js
+babel.config.js
+
+# github
+.github
+
+# ide
+.idea
+.vscode
+.theia

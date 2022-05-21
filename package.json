@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/themost-framework/themost-adapters.git"
+    "url": "https://github.com/themost-framework/mysql.git"
   },
   "keywords": [
     "data",
@@ -21,9 +21,9 @@
   "author": "Kyriakos Barbounakis <k.barbounakis@gmail.com>",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/themost-framework/themost-adapters/issues"
+    "url": "https://github.com/themost-framework/mysql/issues"
   },
-  "homepage": "https://github.com/themost-framework/themost-adapters",
+  "homepage": "https://github.com/themost-framework/mysql",
   "dependencies": {
     "async": "^2.6.4",
     "lodash": "^4.17.4",
@@ -32,5 +32,28 @@
   "peerDependencies": {
     "@themost/common": "^2",
     "@themost/query": "^2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.17.6",
+    "@babel/core": "^7.17.5",
+    "@babel/eslint-plugin": "^7.17.7",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/register": "^7.17.0",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@rollup/plugin-commonjs": "^22.0.0",
+    "@themost/data": "^2.6.34",
+    "@themost/peers": "^1.0.2",
+    "@themost/sqlite": "^2.6.4",
+    "@types/jest": "^27.4.1",
+    "@types/sprintf-js": "^1.1.2",
+    "dotenv": "^16.0.0",
+    "eslint": "^8.15.0",
+    "jasmine": "^4.1.0",
+    "jasmine-spec-reporter": "^7.0.0",
+    "nyc": "^15.1.0",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.73.0",
+    "rollup-plugin-dts": "^4.2.1",
+    "typescript": "^4.6.4"
   }
 }

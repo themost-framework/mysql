@@ -1,0 +1,41 @@
+{
+    "parser": "@babel/eslint-parser",
+    "env": {
+      "node": true,
+      "es6": true
+    },
+    "globals": {
+      "describe": false,
+      "it": false,
+      "fdescribe": false,
+      "fit": false,
+      "before": false,
+      "beforeEach": false,
+      "afterEach": false,
+      "beforeAll": false,
+      "after": false,
+      "afterAll": false,
+      "expect": false,
+      "expectAsync": false,
+      "spyOn": false,
+      "jasmine":false
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+      "no-console": "off",
+      "no-invalid-this": "warn",
+      "no-undef": "error",
+      "no-unused-vars": "warn",
+      "no-var": [
+        "error"
+      ],
+      "quotes": [
+        "error",
+        "single"
+      ],
+      "strict": [
+        2,
+        "never"
+      ]
+    }
+  }
