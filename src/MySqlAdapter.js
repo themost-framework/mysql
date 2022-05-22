@@ -2,7 +2,6 @@
 import mysql from 'mysql';
 import async from 'async';
 import { sprintf } from 'sprintf-js';
-import _ from 'lodash';
 import { QueryExpression, QueryField } from '@themost/query';
 import { TraceUtils } from '@themost/common';
 import { MySqlFormatter, zeroPad } from './MySqlFormatter';
@@ -76,6 +75,17 @@ class MySqlAdapter {
         }
     }
 
+    openAsync() {
+        return new Promise((resolve, reject) => {
+            return this.open((err) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve();
+            });
+        });
+    }
+
     /**
      * @param {Function} callback
      */
@@ -98,6 +108,17 @@ class MySqlAdapter {
                 callback();
             });
         }
+    }
+
+    closeAsync() {
+        return new Promise((resolve, reject) => {
+            return this.close((err) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve();
+            });
+        });
     }
 
     /**
@@ -170,6 +191,27 @@ class MySqlAdapter {
     }
 
     /**
+     * Begins a data transaction and executes the given function
+     * @param func {Function}
+     */
+     executeInTransactionAsync(func) {
+        return new Promise((resolve, reject) => {
+            return this.executeInTransaction((callback) => {
+                return func.call(this).then(res => {
+                    return callback(null, res);
+                }).catch(err => {
+                    return callback(err);
+                });
+            }, (err, res) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(res);
+            });
+        });
+    }
+
+    /**
      * Executes an operation against database and returns the results.
      * @param {DataModelBatch} batch
      * @param {Function} callback
@@ -206,7 +248,7 @@ class MySqlAdapter {
             //throw error if any
             if (err) { callback.bind(self)(err); return; }
 
-            self.execute('SELECT * FROM increment_id WHERE entity=? AND attribute=?', [entity, attribute], function (err, result) {
+            self.execute('SELECT * FROM `increment_id` WHERE `entity`=? AND `attribute`=?', [entity, attribute], function (err, result) {
                 if (err) { callback.bind(self)(err); return; }
                 if (result.length === 0) {
                     //get max value by querying the given entity
@@ -217,7 +259,7 @@ class MySqlAdapter {
                         if (result.length > 0) {
                             value = parseInt(result[0][attribute]) + 1;
                         }
-                        self.execute('INSERT INTO increment_id(entity, attribute, value) VALUES (?,?,?)', [entity, attribute, value], function (err) {
+                        self.execute('INSERT INTO `increment_id`(`entity`, `attribute`, `value`) VALUES (?,?,?)', [entity, attribute, value], function (err) {
                             //throw error if any
                             if (err) { callback.bind(self)(err); return; }
                             //return new increment value
@@ -228,7 +270,7 @@ class MySqlAdapter {
                 else {
                     //get new increment value
                     const value = parseInt(result[0].value) + 1;
-                    self.execute('UPDATE increment_id SET value=? WHERE id=?', [value, result[0].id], function (err) {
+                    self.execute('UPDATE `increment_id` SET `value`=? WHERE `id`=?', [value, result[0].id], function (err) {
                         //throw error if any
                         if (err) { callback.bind(self)(err); return; }
                         //return new increment value
@@ -286,6 +328,22 @@ class MySqlAdapter {
         catch (err) {
             callback.bind(self)(err);
         }
+    }
+
+    /**
+     * @param {*} query
+     * @param {*=} values
+     * @returns Promise<void>
+     */
+     executeAsync(query, values) {
+        return new Promise((resolve, reject) => {
+            return this.execute(query, values, (err, results) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(results);
+            });
+        });
     }
 
     /**
@@ -383,7 +441,7 @@ class MySqlAdapter {
 
     /**
      *
-     * @param  {DataModelMigration|*} obj - An Object that represents the data model scheme we want to migrate
+     * @param  {MySqlAdapterMigration} obj - An Object that represents the data model scheme we want to migrate
      * @param {Function} callback
      */
     migrate(obj, callback) {
@@ -424,44 +482,55 @@ class MySqlAdapter {
                     function (arg, cb) {
                         self.execute('SELECT COUNT(*) AS `count` FROM `migrations` WHERE `appliesTo`=? and `version`=?',
                             [migration.appliesTo, migration.version], function (err, result) {
-                                if (err) { return cb(err); }
-                                cb(null, result[0].count);
+                                if (err) {
+                                    return cb(err);
+                                }
+                                return cb(null, result[0].count);
                             });
                     },
                     //4a. Check table existence
                     function (arg, cb) {
                         //migration has already been applied (set migration.updated=true)
-                        if (arg > 0) { obj.updated = true; return cb(null, -1); }
+                        if (arg > 0) {
+                            obj.updated = true;
+                            return cb(null, -1);
+                        }
                         self.table(migration.appliesTo).exists(function (err, exists) {
-                            if (err) { return cb(err); }
-                            cb(null, exists);
+                            if (err) {
+                                return cb(err);
+                            }
+                            return cb(null, exists ? -1 : 0);
                         });
                     },
                     //4b. Migrate target table (create or alter)
                     function (arg, cb) {
                         //migration has already been applied
-                        if (arg < 0) { return cb(null, arg); }
+                        if (arg < 0) {
+                            return cb(null, arg);
+                        }
                         if (arg === 0) {
                             //create table
                             return self.table(migration.appliesTo).create(migration.add, function (err) {
-                                if (err) { return cb(err); }
-                                cb(null, 1);
+                                if (err) {
+                                    return cb(err);
+                                }
+                                return cb(null, 1);
                             });
                         }
                         //columns to be removed (unsupported)
-                        if (_.isArray(migration.remove)) {
+                        if (Array.isArray(migration.remove)) {
                             if (migration.remove.length > 0) {
                                 return cb(new Error('Data migration remove operation is not supported by this adapter.'));
                             }
                         }
                         //columns to be changed (unsupported)
-                        if (_.isArray(migration.change)) {
+                        if (Array.isArray(migration.change)) {
                             if (migration.change.length > 0) {
                                 return cb(new Error('Data migration change operation is not supported by this adapter. Use add collection instead.'));
                             }
                         }
                         let column, newType, oldType;
-                        if (_.isArray(migration.add)) {
+                        if (Array.isArray(migration.add)) {
                             //init change collection
                             migration.change = [];
                             //get table columns
@@ -469,7 +538,7 @@ class MySqlAdapter {
                                 if (err) { return cb(err); }
                                 for (let i = 0; i < migration.add.length; i++) {
                                     const x = migration.add[i];
-                                    column = _.find(columns, function (y) { return (y.name === x.name); });
+                                    column = columns.find(function (y) { return (y.name === x.name); });
                                     if (column) {
                                         //if column is primary key remove it from collection
                                         if (column.primary) {
@@ -551,6 +620,21 @@ class MySqlAdapter {
         });
     }
 
+    /**
+     * @param {*} obj
+     * @returns Promise<*>
+     */
+     migrateAsync(obj) {
+        return new Promise((resolve, reject) => {
+            return this.migrate(obj, (err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(result);
+            });
+        });
+    }
+
     table(name) {
         const self = this;
 
@@ -560,11 +644,25 @@ class MySqlAdapter {
              */
             exists: function (callback) {
                 callback = callback || function () { };
-                self.execute('SELECT COUNT(*) AS `count` FROM information_schema.TABLES WHERE TABLE_NAME=? AND TABLE_SCHEMA=DATABASE()',
-                    [name], function (err, result) {
-                        if (err) { return callback(err); }
-                        callback(null, result[0].count);
+                self.execute('SELECT COUNT(*) AS `count` FROM `information_schema`.`TABLES` WHERE `TABLE_NAME`=? AND `TABLE_SCHEMA`=DATABASE()',
+                    [
+                        name
+                    ], function (err, result) {
+                        if (err) { 
+                            return callback(err);
+                        }
+                        return callback(null, result[0].count > 0);
                     });
+            },
+            existsAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.exists((err, value) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(value);
+                    });
+                });
             },
             /**
              * @param {function(Error,string=)} callback
@@ -581,6 +679,16 @@ class MySqlAdapter {
                             callback(null, result[0].version || '0.0');
                     });
             },
+            versionAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.version((err, value) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(value);
+                    });
+                });
+            },
             /**
              * @param {function(Error=,Array=)} callback
              */
@@ -593,9 +701,21 @@ class MySqlAdapter {
                     'CONCAT(COLUMN_TYPE, (CASE WHEN EXTRA = NULL THEN \'\' ELSE CONCAT(\' \',EXTRA) END)) AS `type1` ' +
                     'FROM information_schema.COLUMNS WHERE TABLE_NAME=? AND TABLE_SCHEMA=DATABASE()',
                     [name], function (err, result) {
-                        if (err) { return callback(err); }
-                        callback(null, result);
+                        if (err) {
+                            return callback(err);
+                        }
+                        return callback(null, result);
                     });
+            },
+            columnsAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.columns((err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
             },
             /**
              * @param {Array} fields
@@ -604,20 +724,20 @@ class MySqlAdapter {
             create: function (fields, callback) {
                 callback = callback || function () { };
                 fields = fields || [];
-                if (!_.isArray(fields)) {
+                if (Array.isArray(fields) === false) {
                     return callback(new Error('Invalid argument type. Expected Array.'));
                 }
                 if (fields.length === 0) {
                     return callback(new Error('Invalid argument. Fields collection cannot be empty.'));
                 }
-                let strFields = _.map(_.filter(fields, (x) => { return !x.oneToMany; }),
+                let strFields = fields.filter((x) => { return !x.oneToMany; }).map(
                     (x) => {
                         return MySqlAdapter.format('`%f` %t', x);
                     }).join(', ');
                 //add primary key constraint
-                const strPKFields = _.map(_.filter(fields, (x) => {
+                const strPKFields = fields.filter((x) => {
                     return (x.primary === true || x.primary === 1);
-                }), (x) => {
+                }).map((x) => {
                     return MySqlAdapter.format('`%f`', x);
                 }).join(', ');
                 if (strPKFields.length > 0) {
@@ -628,6 +748,16 @@ class MySqlAdapter {
                     callback(err);
                 });
             },
+            createAsync: function (fields) {
+                return new Promise((resolve, reject) => {
+                    this.create(fields, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            },
             /**
              * Alters the table by adding an array of fields
              * @param {{name:string,type:string,primary:boolean|number,nullable:boolean|number,size:number,oneToMany:boolean}[]|*} fields
@@ -635,9 +765,8 @@ class MySqlAdapter {
              */
             add: function (fields, callback) {
                 callback = callback || function () { };
-                callback = callback || function () { };
                 fields = fields || [];
-                if (!_.isArray(fields)) {
+                if (Array.isArray(fields) === false) {
                     //invalid argument exception
                     return callback(new Error('Invalid argument type. Expected Array.'));
                 }
@@ -647,7 +776,7 @@ class MySqlAdapter {
                 }
                 const formatter = new MySqlFormatter();
                 const strTable = formatter.escapeName(name);
-                const statements = _.map(fields, function (x) {
+                const statements = fields.map(function (x) {
                     return MySqlAdapter.format('ALTER TABLE ' + strTable + ' ADD COLUMN `%f` %t', x);
                 });
                 return async.eachSeries(statements, function (sql, cb) {
@@ -658,6 +787,16 @@ class MySqlAdapter {
                     return callback(err);
                 });
             },
+            addAsync: function (fields) {
+                return new Promise((resolve, reject) => {
+                    this.add(fields, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            },
             /**
              * Alters the table by modifying an array of fields
              * @param {{name:string,type:string,primary:boolean|number,nullable:boolean|number,size:number,oneToMany:boolean}[]|*} fields
@@ -665,9 +804,8 @@ class MySqlAdapter {
              */
             change: function (fields, callback) {
                 callback = callback || function () { };
-                callback = callback || function () { };
                 fields = fields || [];
-                if (!_.isArray(fields)) {
+                if (Array.isArray(fields) === false) {
                     //invalid argument exception
                     return callback(new Error('Invalid argument type. Expected Array.'));
                 }
@@ -677,7 +815,7 @@ class MySqlAdapter {
                 }
                 const formatter = new MySqlFormatter();
                 const strTable = formatter.escapeName(name);
-                const statements = _.map(fields, function (x) {
+                const statements = fields.map(function (x) {
                     return MySqlAdapter.format('ALTER TABLE ' + strTable + ' MODIFY COLUMN `%f` %t', x);
                 });
                 return async.eachSeries(statements, function (sql, cb) {
@@ -687,6 +825,16 @@ class MySqlAdapter {
                 }, function (err) {
                     return callback(err);
                 });
+            },
+            changeAsync: function (fields) {
+                return new Promise((resolve, reject) => {
+                    this.change(fields, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
             }
         };
     }
@@ -694,11 +842,11 @@ class MySqlAdapter {
     view(name) {
         const self = this;
         let owner;
-        let view;
-
+        let view = name;
         const matches = /(\w+)\.(\w+)/.exec(name);
         if (matches) {
             //get schema owner
+            // eslint-disable-next-line no-unused-vars
             owner = matches[1];
             //get table name
             view = matches[2];
@@ -712,9 +860,21 @@ class MySqlAdapter {
              */
             exists: function (callback) {
                 const sql = 'SELECT COUNT(*) AS `count` FROM information_schema.TABLES WHERE TABLE_NAME=? AND TABLE_TYPE=\'VIEW\' AND TABLE_SCHEMA=DATABASE()';
-                self.execute(sql, [name], function (err, result) {
+                self.execute(sql, [
+                    view
+                ], function (err, result) {
                     if (err) { callback(err); return; }
                     callback(null, (result[0].count > 0));
+                });
+            },
+            existsAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.exists((err, value) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(value);
+                    });
                 });
             },
             /**
@@ -722,22 +882,39 @@ class MySqlAdapter {
              */
             drop: function (callback) {
                 callback = callback || function () { };
-                self.open(function (err) {
-                    if (err) { return callback(err); }
+                self.open((err) => {
+                    if (err) {
+                        return callback(err);
+                    }
                     const sql = 'SELECT COUNT(*) AS `count` FROM information_schema.TABLES WHERE TABLE_NAME=? AND TABLE_TYPE=\'VIEW\' AND TABLE_SCHEMA=DATABASE()';
-                    self.execute(sql, [name], function (err, result) {
-                        if (err) { return callback(err); }
+                    self.execute(sql, [
+                        view
+                    ], (err, result) => {
+                        if (err) {
+                            return callback(err);
+                        }
                         const exists = (result[0].count > 0);
                         if (exists) {
-                            const sql = sprintf('DROP VIEW `%s`', name);
-                            self.execute(sql, undefined, function (err) {
-                                if (err) { callback(err); return; }
-                                callback();
+                            const formatter = new MySqlFormatter();
+                            const sql = sprintf('DROP VIEW %s', formatter.escapeName(name));
+                            return self.execute(sql, [], function (err) {
+                                if (err) {
+                                    return callback(err);
+                                }
+                                return callback();
                             });
                         }
-                        else {
-                            callback();
+                        return callback();
+                    });
+                });
+            },
+            dropAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.drop((err) => {
+                        if (err) {
+                            return reject(err);
                         }
+                        return resolve();
                     });
                 });
             },
@@ -746,24 +923,34 @@ class MySqlAdapter {
              * @param {Function} callback
              */
             create: function (q, callback) {
-                const thisArg = this;
-                self.executeInTransaction(function (tr) {
-                    thisArg.drop(function (err) {
-                        if (err) { tr(err); return; }
+                self.executeInTransaction((tr) => {
+                    this.drop((err) => {
+                        if (err) {
+                            return tr(err); 
+                        }
                         try {
-                            let sql = sprintf('CREATE VIEW `%s` AS ', name);
                             const formatter = new MySqlFormatter();
+                            let sql = sprintf('CREATE VIEW %s AS ', formatter.escapeName(name));
                             sql += formatter.format(q);
                             self.execute(sql, [], tr);
                         }
                         catch (e) {
-                            tr(e);
+                            return tr(e);
                         }
                     });
-                }, function (err) {
-                    callback(err);
+                }, (err) => {
+                    return callback(err);
                 });
-
+            },
+            createAsync: function (q) {
+                return new Promise((resolve, reject) => {
+                    this.create(q, (err) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve();
+                    });
+                });
             }
         };
     }
@@ -779,8 +966,8 @@ class MySqlAdapter {
                 self.execute(sprintf('SHOW INDEXES FROM `%s`', table), null, function (err, result) {
                     if (err) { return callback(err); }
                     const indexes = [];
-                    _.forEach(result, function (x) {
-                        const obj = _.find(indexes, function (y) { return y.name === x['Key_name']; });
+                    result.forEach(function (x) {
+                        const obj = indexes.find(function (y) { return y.name === x['Key_name']; });
                         if (typeof obj === 'undefined') {
                             indexes.push({
                                 name: x['Key_name'],
@@ -794,6 +981,16 @@ class MySqlAdapter {
                     return callback(null, indexes);
                 });
             },
+            listAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.list((err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            },
             /**
              * @param {string} name
              * @param {Array|string} columns
@@ -804,7 +1001,7 @@ class MySqlAdapter {
                 if (typeof columns === 'string') {
                     cols.push(columns);
                 }
-                else if (_.isArray(columns)) {
+                else if (Array.isArray(columns)) {
                     cols.push.apply(cols, columns);
                 }
                 else {
@@ -814,12 +1011,12 @@ class MySqlAdapter {
                 thisArg.list(function (err, indexes) {
 
                     if (err) { return callback(err); }
-                    const ix = _.find(indexes, function (x) { return x.name === name; });
+                    const ix = indexes.find(function (x) { return x.name === name; });
                     //format create index SQL statement
                     const sqlCreateIndex = sprintf('CREATE INDEX %s ON %s(%s)',
                         formatter.escapeName(name),
                         formatter.escapeName(table),
-                        _.map(cols, function (x) {
+                        cols.map(function (x) {
                             return formatter.escapeName(x);
                         }).join(','));
                     if (typeof ix === 'undefined' || ix === null) {
@@ -828,7 +1025,7 @@ class MySqlAdapter {
                     else {
                         let nCols = cols.length;
                         //enumerate existing columns
-                        _.forEach(ix.columns, function (x) {
+                        ix.columns.forEach(function (x) {
                             if (cols.indexOf(x) >= 0) {
                                 //column exists in index
                                 nCols -= 1;
@@ -848,20 +1045,44 @@ class MySqlAdapter {
                         }
                     }
                 });
-
-
+            },
+            /**
+             * @param {string} name
+             * @param {Array|string} columns
+             */
+             createAsync: function (name, columns) {
+                return new Promise((resolve, reject) => {
+                    this.create(name, columns, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
             },
             drop: function (name, callback) {
                 if (typeof name !== 'string') {
                     return callback(new Error('Name must be a valid string.'));
                 }
-                this.list(function (err, indexes) {
-                    if (err) { return callback(err); }
-                    const exists = typeof _.find(indexes, function (x) { return x.name === name; }) !== 'undefined';
+                this.list((err, indexes) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    const exists = indexes.find(function (x) { return x.name === name; }) != null;
                     if (!exists) {
                         return callback();
                     }
                     self.execute(sprintf('DROP INDEX %s ON %s', formatter.escapeName(name), formatter.escapeName(table)), [], callback);
+                });
+            },
+            dropAsync: function (name) {
+                return new Promise((resolve, reject) => {
+                    this.drop(name, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
                 });
             }
         };
@@ -878,6 +1099,54 @@ class MySqlAdapter {
             return txt;
         }.bind(this));
     }
+
+    /**
+     * Database helper
+     * @param {string} name - A string that represents the database name
+     * @returns {*}
+     */
+     database(name) {
+        const self = this;
+        return {
+            exists: function (callback) {
+                return self.execute('SHOW DATABASES;', [], (err, results) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    const exists = results.findIndex((x) => x.Database === name);
+                    return callback(null, exists >= 0);
+                });
+            },
+            existsAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.exists((err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            },
+            create: function (callback) {
+                return self.execute(`CREATE DATABASE ${self.escapeName(name)};`, [], (err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    return callback();
+                });
+            },
+            createAsync: function (fields) {
+                return new Promise((resolve, reject) => {
+                    this.create(fields, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            }
+        }
+     }
 }
 
 export {

@@ -172,6 +172,7 @@ describe('MySqlAdapter', () => {
 
             exists = await db.view('View1').existsAsync();
             expect(exists).toBeFalsy();
+            await db.executeAsync(`DROP TABLE ${new MySqlFormatter().escapeName('Table1')}`);
         });
     });
 
