@@ -282,6 +282,22 @@ class MySqlAdapter {
     }
 
     /**
+     * @param {string} entity 
+     * @param {string} attribute 
+     * @returns Promise<any>
+     */
+    selectIdentityAsync(entity, attribute) {
+        return new Promise((resolve, reject) => {
+            return this.selectIdentity(entity, attribute, (err, res) => {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(res);
+            });
+        });
+    }
+
+    /**
      * @param query {*}
      * @param values {*}
      * @param {function} callback
