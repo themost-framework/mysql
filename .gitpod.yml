@@ -1,3 +1,5 @@
+checkoutLocation: themost-mysql
+
 image:
   file: .gitpod.dockerfile
 
