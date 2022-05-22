@@ -867,6 +867,16 @@ class MySqlAdapter {
                     callback(null, (result[0].count > 0));
                 });
             },
+            existsAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.exists((err, value) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(value);
+                    });
+                });
+            },
             /**
              * @param {Function} callback
              */
@@ -886,7 +896,7 @@ class MySqlAdapter {
                         const exists = (result[0].count > 0);
                         if (exists) {
                             const formatter = new MySqlFormatter();
-                            const sql = sprintf('DROP VIEW `%s`', formatter.escapeName(name));
+                            const sql = sprintf('DROP VIEW %s', formatter.escapeName(name));
                             return self.execute(sql, [], function (err) {
                                 if (err) {
                                     return callback(err);
@@ -971,6 +981,16 @@ class MySqlAdapter {
                     return callback(null, indexes);
                 });
             },
+            listAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.list((err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            },
             /**
              * @param {string} name
              * @param {Array|string} columns
@@ -1025,8 +1045,20 @@ class MySqlAdapter {
                         }
                     }
                 });
-
-
+            },
+            /**
+             * @param {string} name
+             * @param {Array|string} columns
+             */
+             createAsync: function (name, columns) {
+                return new Promise((resolve, reject) => {
+                    this.create(name, columns, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
             },
             drop: function (name, callback) {
                 if (typeof name !== 'string') {
@@ -1041,6 +1073,16 @@ class MySqlAdapter {
                         return callback();
                     }
                     self.execute(sprintf('DROP INDEX %s ON %s', formatter.escapeName(name), formatter.escapeName(table)), [], callback);
+                });
+            },
+            dropAsync: function (name) {
+                return new Promise((resolve, reject) => {
+                    this.drop(name, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
                 });
             }
         };
