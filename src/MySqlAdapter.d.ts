@@ -49,6 +49,7 @@ export declare interface MySqlAdapterMigration {
     change?: Array<any>;
     appliesTo: string;
     version: string;
+    indexes?: Array<{name: string, columns: Array<string>}>;
 }
 
 export declare class MySqlAdapter {
@@ -62,7 +63,8 @@ export declare class MySqlAdapter {
     createView(name: string, query: any, callback: (err: Error) => void): void;
     executeInTransaction(func: any, callback: (err: Error) => void): void;
     executeInTransactionAsync(func: Promise<any>): Promise<any>;
-    migrate(obj: MySqlAdapterMigration, callback: (err: Error) => void): void;
+    migrate(obj: MySqlAdapterMigration, callback: (err: Error, result?: any) => void): void;
+    migrateAsync(obj: MySqlAdapterMigration): Promise<any>;
     selectIdentity(entity: string, attribute: string, callback: (err: Error, value: any) => void): void;
     execute(query: any, values: any, callback: (err: Error, value: any) => void): void;
     executeAsync(query: any, values: any): Promise<any>;

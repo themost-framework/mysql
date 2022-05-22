@@ -27,7 +27,6 @@
   "homepage": "https://github.com/themost-framework/mysql",
   "dependencies": {
     "async": "^2.6.4",
-    "lodash": "^4.17.4",
     "mysql": "^2.1.0",
     "sprintf-js": "^1.1.2"
   },
@@ -46,7 +45,7 @@
     "@themost/data": "^2.6.34",
     "@themost/peers": "^1.0.2",
     "@themost/sqlite": "^2.6.4",
-    "@types/jest": "^27.4.1",
+    "@types/jasmine": "^4.0.3",
     "@types/sprintf-js": "^1.1.2",
     "dotenv": "^16.0.0",
     "eslint": "^8.15.0",

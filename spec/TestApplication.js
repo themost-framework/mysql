@@ -7,18 +7,30 @@ import { SqliteAdapter } from '@themost/sqlite';
 import path from 'path';
 
 const testConnectionOptions = {
-    'server': process.env.MYSQL_HOST,
-    'port': parseInt(process.env.MYSQL_PORT, 10),
-    'user': process.env.MYSQL_USER,
+    'server': process.env.DB_HOST,
+    'port': parseInt(process.env.DB_PORT, 10),
+    'user': process.env.DB_USER,
     'database': 'test_db'
 };
 
+if (process.env.DB_PASSWORD) {
+    Object.assign(testConnectionOptions, {
+        password: process.env.DB_PASSWORD
+    });
+}
+
 const masterConnectionOptions = {
-    'server': process.env.MYSQL_HOST,
-    'port': parseInt(process.env.MYSQL_PORT, 10),
-    'user': process.env.MYSQL_USER,
+    'server': process.env.DB_HOST,
+    'port': parseInt(process.env.DB_PORT, 10),
+    'user': process.env.DB_USER,
     'database': 'postgres'
 };
+
+if (process.env.DB_PASSWORD) {
+    Object.assign(testConnectionOptions, {
+        password: process.env.masterConnectionOptions
+    });
+}
 
 const sourceConnectionOptions = {
     database: path.resolve(__dirname, 'db/local.db')
