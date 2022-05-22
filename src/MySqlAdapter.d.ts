@@ -50,6 +50,7 @@ export declare interface MySqlAdapterMigration {
     appliesTo: string;
     version: string;
     indexes?: Array<{name: string, columns: Array<string>}>;
+    updated: boolean;
 }
 
 export declare class MySqlAdapter {

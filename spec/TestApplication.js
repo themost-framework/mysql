@@ -23,12 +23,12 @@ const masterConnectionOptions = {
     'server': process.env.DB_HOST,
     'port': parseInt(process.env.DB_PORT, 10),
     'user': process.env.DB_USER,
-    'database': 'postgres'
+    'database': 'mysql'
 };
 
 if (process.env.DB_PASSWORD) {
-    Object.assign(testConnectionOptions, {
-        password: process.env.masterConnectionOptions
+    Object.assign(masterConnectionOptions, {
+        password: process.env.DB_PASSWORD
     });
 }
 
@@ -56,7 +56,7 @@ class TestApplication extends DataApplication {
         const name = 'MySQL Data Adapter';
         const invariantName = 'mysql';
         Object.assign(dataConfiguration.adapterTypes, {
-            postgres: {
+            mysql: {
                 name,
                 invariantName,
                 createInstance
@@ -210,6 +210,7 @@ class TestApplication extends DataApplication {
                 return item.abstract ? false : true;
             });
             const sourceAdapter = new SqliteAdapter(sourceConnectionOptions);
+            const formatter = new MySqlFormatter();
             for (let entityType of entityTypes) {
                 TraceUtils.log(`Upgrading ${entityType.name}`);
                 await new Promise((resolve, reject) => {
@@ -222,13 +223,13 @@ class TestApplication extends DataApplication {
                             return reject(err);
                         }
                         (async function () {
+                            const formatter = new MySqlFormatter();
                             const sourceTableExists = await sourceAdapter.table(model.sourceAdapter).existsAsync();
                             if (sourceTableExists) {
                                 // get source data
-                                let results = await sourceAdapter.executeAsync(`SELECT * FROM "${model.sourceAdapter}"`);
+                                let results = await sourceAdapter.executeAsync(`SELECT * FROM ${formatter.escapeName(model.sourceAdapter)}`);
                                 if (results.length > 0) {
-                                    await context.db.executeAsync(`DELETE FROM "${model.sourceAdapter}" WHERE 1=1`);
-                                    const formatter = new MySqlFormatter();
+                                    await context.db.executeAsync(`DELETE FROM ${formatter.escapeName(model.sourceAdapter)} WHERE 1=1`);
                                     // get columns of type boolean
                                     // data should be update to true/false
                                     // because of an error occurred while trying to insert an integer value to a field of type boolean
@@ -246,8 +247,8 @@ class TestApplication extends DataApplication {
                                     }
                                     const key = model.getAttribute(model.primaryKey);
                                     if (key.type === 'Counter') {
-                                        // reset sequence
-                                        await context.db.executeAsync(`select setval(pg_get_serial_sequence('"${model.sourceAdapter}"', '${key.name}'), (select max("${key.name}") from "${model.sourceAdapter}")); `);
+                                        const increment = await context.db.executeAsync(`SELECT MAX(${formatter.escapeName(key.name)}) AS \`value\` FROM ${formatter.escapeName(model.sourceAdapter)}`);
+                                        await context.db.executeAsync(`ALTER TABLE ${formatter.escapeName(model.sourceAdapter)} AUTO_INCREMENT = ${increment[0].value}`)
                                     }
                                 }
                             }

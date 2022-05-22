@@ -1,6 +1,6 @@
 import { TestApplication } from './TestApplication';
 
-describe('StringFunctions', () => {
+fdescribe('StringFunctions', () => {
     /**
      * @type {TestApplication}
      */

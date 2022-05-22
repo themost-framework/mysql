@@ -248,7 +248,7 @@ class MySqlAdapter {
             //throw error if any
             if (err) { callback.bind(self)(err); return; }
 
-            self.execute('SELECT * FROM increment_id WHERE entity=? AND attribute=?', [entity, attribute], function (err, result) {
+            self.execute('SELECT * FROM `increment_id` WHERE `entity`=? AND `attribute`=?', [entity, attribute], function (err, result) {
                 if (err) { callback.bind(self)(err); return; }
                 if (result.length === 0) {
                     //get max value by querying the given entity
@@ -259,7 +259,7 @@ class MySqlAdapter {
                         if (result.length > 0) {
                             value = parseInt(result[0][attribute]) + 1;
                         }
-                        self.execute('INSERT INTO increment_id(entity, attribute, value) VALUES (?,?,?)', [entity, attribute, value], function (err) {
+                        self.execute('INSERT INTO `increment_id`(`entity`, `attribute`, `value`) VALUES (?,?,?)', [entity, attribute, value], function (err) {
                             //throw error if any
                             if (err) { callback.bind(self)(err); return; }
                             //return new increment value
@@ -270,7 +270,7 @@ class MySqlAdapter {
                 else {
                     //get new increment value
                     const value = parseInt(result[0].value) + 1;
-                    self.execute('UPDATE increment_id SET value=? WHERE id=?', [value, result[0].id], function (err) {
+                    self.execute('UPDATE `increment_id` SET `value`=? WHERE `id`=?', [value, result[0].id], function (err) {
                         //throw error if any
                         if (err) { callback.bind(self)(err); return; }
                         //return new increment value
@@ -441,7 +441,7 @@ class MySqlAdapter {
 
     /**
      *
-     * @param  {DataModelMigration|*} obj - An Object that represents the data model scheme we want to migrate
+     * @param  {MySqlAdapterMigration} obj - An Object that represents the data model scheme we want to migrate
      * @param {Function} callback
      */
     migrate(obj, callback) {
@@ -482,28 +482,39 @@ class MySqlAdapter {
                     function (arg, cb) {
                         self.execute('SELECT COUNT(*) AS `count` FROM `migrations` WHERE `appliesTo`=? and `version`=?',
                             [migration.appliesTo, migration.version], function (err, result) {
-                                if (err) { return cb(err); }
-                                cb(null, result[0].count);
+                                if (err) {
+                                    return cb(err);
+                                }
+                                return cb(null, result[0].count);
                             });
                     },
                     //4a. Check table existence
                     function (arg, cb) {
                         //migration has already been applied (set migration.updated=true)
-                        if (arg > 0) { obj.updated = true; return cb(null, -1); }
+                        if (arg > 0) {
+                            obj.updated = true;
+                            return cb(null, -1);
+                        }
                         self.table(migration.appliesTo).exists(function (err, exists) {
-                            if (err) { return cb(err); }
-                            cb(null, exists);
+                            if (err) {
+                                return cb(err);
+                            }
+                            return cb(null, exists ? -1 : 0);
                         });
                     },
                     //4b. Migrate target table (create or alter)
                     function (arg, cb) {
                         //migration has already been applied
-                        if (arg < 0) { return cb(null, arg); }
+                        if (arg < 0) {
+                            return cb(null, arg);
+                        }
                         if (arg === 0) {
                             //create table
                             return self.table(migration.appliesTo).create(migration.add, function (err) {
-                                if (err) { return cb(err); }
-                                cb(null, 1);
+                                if (err) {
+                                    return cb(err);
+                                }
+                                return cb(null, 1);
                             });
                         }
                         //columns to be removed (unsupported)
@@ -909,7 +920,7 @@ class MySqlAdapter {
                         }
                         try {
                             const formatter = new MySqlFormatter();
-                            let sql = sprintf('CREATE VIEW `%s` AS ', formatter.escapeName(name));
+                            let sql = sprintf('CREATE VIEW %s AS ', formatter.escapeName(name));
                             sql += formatter.format(q);
                             self.execute(sql, [], tr);
                         }
@@ -1046,6 +1057,54 @@ class MySqlAdapter {
             return txt;
         }.bind(this));
     }
+
+    /**
+     * Database helper
+     * @param {string} name - A string that represents the database name
+     * @returns {*}
+     */
+     database(name) {
+        const self = this;
+        return {
+            exists: function (callback) {
+                return self.execute('SHOW DATABASES;', [], (err, results) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    const exists = results.findIndex((x) => x.Database === name);
+                    return callback(null, exists >= 0);
+                });
+            },
+            existsAsync: function () {
+                return new Promise((resolve, reject) => {
+                    this.exists((err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            },
+            create: function (callback) {
+                return self.execute(`CREATE DATABASE ${self.escapeName(name)};`, [], (err) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    return callback();
+                });
+            },
+            createAsync: function (fields) {
+                return new Promise((resolve, reject) => {
+                    this.create(fields, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(res);
+                    });
+                });
+            }
+        }
+     }
 }
 
 export {
