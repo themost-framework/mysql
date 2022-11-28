@@ -1,6 +1,6 @@
 {
   "name": "@themost/mysql",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "MOST Web Framework MySQL Data Adapter",
   "main": "index.js",
   "scripts": {
