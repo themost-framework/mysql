@@ -4,4 +4,10 @@ image:
   file: .gitpod.dockerfile
 
 tasks:
-  - init: npm install
+  - init: |
+      npm install 
+      echo -e "DB_HOST=localhost" >> .env
+      echo -e "DB_PORT=3306" >> .env
+      echo -e "DB_USER=root" >> .env
+      echo -e "DB_PASSWORD=secret" >> .env
+      mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'secret';FLUSH PRIVILEGES;"

@@ -1,5 +1,5 @@
 // MOST Web Framework Codename Zero Gravity Copyright (c) 2017-2022, THEMOST LP All rights reserved
-import mysql from 'mysql';
+import mysql from 'mysql2';
 import async from 'async';
 import { sprintf } from 'sprintf-js';
 import { QueryExpression, QueryField } from '@themost/query';
