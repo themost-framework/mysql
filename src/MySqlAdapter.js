@@ -313,7 +313,6 @@ class MySqlAdapter {
             else {
                 //format query expression or any object that may be act as query expression
                 const formatter = new MySqlFormatter();
-                formatter.settings.nameFormat = MySqlAdapter.NAME_FORMAT;
                 sql = formatter.format(query);
             }
             //validate sql statement
@@ -759,7 +758,8 @@ class MySqlAdapter {
                 if (strPKFields.length > 0) {
                     strFields += ', ' + sprintf('PRIMARY KEY (%s)', strPKFields);
                 }
-                const sql = sprintf('CREATE TABLE %s (%s)', name, strFields);
+                const formatter = new MySqlFormatter();
+                const sql = sprintf('CREATE TABLE %s (%s)', formatter.escapeName(name), strFields);
                 self.execute(sql, null, function (err) {
                     callback(err);
                 });

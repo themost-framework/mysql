@@ -17,10 +17,11 @@ class MySqlFormatter extends SqlFormatter {
      */
     constructor() {
         super();
-        this.settings = {
+        Object.assign(this.settings, {
             nameFormat: '`$1`',
-            forceAlias: true
-        };
+            forceAlias: true,
+            useAliasKeyword: true
+        });
     }
 
     escape(value, unquoted) {
