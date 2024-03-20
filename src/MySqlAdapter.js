@@ -24,6 +24,12 @@ class MySqlAdapter {
          * @type {*}
          */
         this.options = options;
+        if (Object.prototype.hasOwnProperty.call(this.options, 'server')) {
+            // set server to host
+            this.options.host = this.options.server;
+            // and remove property
+            delete this.options.server;
+        }
         /**
          * Gets or sets a boolean that indicates whether connection pooling is enabled or not.
          * @type {boolean}
@@ -133,60 +139,51 @@ class MySqlAdapter {
         //ensure that database connection is open
         self.open(function (err) {
             if (err) {
-                return callback.bind(self)(err);
+                return callback(err);
             }
-            //execution is already in transaction
-            if (self.__transaction) {
-                //so invoke method
-                fn.bind(self)(function (err) {
-                    //call callback
-                    callback.bind(self)(err);
+            // the execution is already in transaction mode
+            if (self.transaction) {
+                // invoke method
+                return fn(function (err) {
+                    // and exit
+                    return callback(err);
                 });
             }
-            else {
-                self.execute('START TRANSACTION', null, function (err) {
-                    if (err) {
-                        callback.bind(self)(err);
-                    }
-                    else {
-                        //set transaction flag to true
-                        self.__transaction = true;
-                        try {
-                            //invoke method
-                            fn.bind(self)(function (error) {
-                                if (error) {
-                                    //rollback transaction
-                                    self.execute('ROLLBACK', null, function () {
-                                        //st flag to false
-                                        self.__transaction = false;
-                                        //call callback
-                                        callback.bind(self)(error);
-                                    });
-                                }
-                                else {
-                                    //commit transaction
-                                    self.execute('COMMIT', null, function (err) {
-                                        //set flag to false
-                                        self.__transaction = false;
-                                        //call callback
-                                        callback.bind(self)(err);
-                                    });
-                                }
+            // set transaction mode
+            self.transaction = true;
+            // start transaction
+            self.execute('START TRANSACTION', null, function (err) {
+                if (err) {
+                    // reset transaction mode
+                    self.transaction = false;
+                    return callback(err);
+                }
+                try {
+                    // invoke method
+                    fn(function (error) {
+                        if (error) {
+                            // rollback transaction
+                            return self.execute('ROLLBACK', null, function () {
+                                self.transaction = false;
+                                return callback(error);
                             });
                         }
-                        catch (err) {
-                            //rollback transaction
-                            self.execute('ROLLBACK', null, function (err) {
-                                //set flag to false
-                                self.__transaction = false;
-                                //call callback
-                                callback.bind(self)(err);
-                            });
-                        }
-
-                    }
-                });
-            }
+                        // commit transaction
+                        return self.execute('COMMIT', null, function (err) {
+                            self.transaction = false;
+                            return callback(err);
+                        });
+                    });
+                }
+                catch (err) {
+                    // rollback transaction
+                    return self.execute('ROLLBACK', null, function (err) {
+                        // reset transaction model
+                        self.transaction = false;
+                        return callback(err);
+                    });
+                }
+            });
         });
     }
 
