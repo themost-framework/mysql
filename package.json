@@ -1,6 +1,6 @@
 {
   "name": "@themost/mysql",
-  "version": "2.6.1",
+  "version": "2.7.0",
   "description": "MOST Web Framework MySQL Data Adapter",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
