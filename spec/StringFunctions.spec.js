@@ -122,5 +122,21 @@ describe('StringFunctions', () => {
         });
     });
 
+    it('should use toString()', async () => {
+        await app.executeInTestTranscaction(async (context) => {
+            let items = await context.model('Product')
+                .asQueryable().select((x) => {
+                    return {
+                        id: x.id, 
+                        price: x.price.toString()
+                    }
+                }).take(25).getItems();
+            expect(Array.isArray(items)).toBeTruthy();
+            for (const item of items) {
+                expect(typeof item.price).toEqual('string');
+            }
+        });
+    });
+
 
 });
