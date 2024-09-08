@@ -52,8 +52,12 @@ class MySqlFormatter extends SqlFormatter {
         return sprintf('CONVERT_TZ(\'%s\',\'%s\', @@session.time_zone)', datetime, timezone);
     }
 
-    $toString(p0) {
-        return sprintf('CAST(%s as NCHAR)', this.escape(p0));
+    $toString(expr) {
+        return sprintf('CAST(%s as NCHAR)', this.escape(expr));
+    }
+
+    $toGuid(expr) {
+        return sprintf('BIN_TO_UUID(UNHEX(MD5(%s)))', this.escape(expr));
     }
 }
 
