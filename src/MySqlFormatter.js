@@ -51,6 +51,10 @@ class MySqlFormatter extends SqlFormatter {
         //convert timestamp to mysql server timezone (by using date object timezone offset)
         return sprintf('CONVERT_TZ(\'%s\',\'%s\', @@session.time_zone)', datetime, timezone);
     }
+
+    $toString(p0) {
+        return sprintf('CAST(%s as NCHAR)', this.escape(p0));
+    }
 }
 
 export {
