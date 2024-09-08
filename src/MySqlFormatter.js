@@ -52,8 +52,36 @@ class MySqlFormatter extends SqlFormatter {
         return sprintf('CONVERT_TZ(\'%s\',\'%s\', @@session.time_zone)', datetime, timezone);
     }
 
-    $toString(p0) {
-        return sprintf('CAST(%s as NCHAR)', this.escape(p0));
+    $toString(expr) {
+        return sprintf('CAST(%s as NCHAR)', this.escape(expr));
+    }
+
+    $toInt(expr) {
+        return sprintf('CAST(%s as SIGNED)', this.escape(expr));
+    }
+
+    $toDouble(expr) {
+        return this.$toDecimal(expr, 19, 8);
+    }
+
+    /**
+     * @param {*} expr 
+     * @param {number=} precision 
+     * @param {number=} scale 
+     * @returns 
+     */
+    $toDecimal(expr, precision, scale) {
+        const p = typeof precision === number ? parseInt(precision,10) : 19;
+        const s = typeof scale === number ? parseInt(scale,10) : 8;
+        return sprintf('CAST(%s as DECIMAL(%s,%s))', this.escape(expr), p, s);
+    }
+
+    $toLong(expr) {
+        return sprintf('CAST(%s as SIGNED)', this.escape(expr));
+    }
+
+    $toGuid(expr) {
+        return sprintf('BIN_TO_UUID(UNHEX(MD5(%s)))', this.escape(expr));
     }
 }
 
