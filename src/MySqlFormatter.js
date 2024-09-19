@@ -64,6 +64,7 @@ class MySqlFormatter extends SqlFormatter {
         return this.$toDecimal(expr, 19, 8);
     }
 
+    // noinspection JSCheckFunctionSignatures
     /**
      * @param {*} expr 
      * @param {number=} precision 
@@ -71,13 +72,17 @@ class MySqlFormatter extends SqlFormatter {
      * @returns 
      */
     $toDecimal(expr, precision, scale) {
-        const p = typeof precision === number ? parseInt(precision,10) : 19;
-        const s = typeof scale === number ? parseInt(scale,10) : 8;
+        const p = typeof precision === 'number' ? Math.floor(precision) : 19;
+        const s = typeof scale === 'number' ? Math.floor(scale) : 8;
         return sprintf('CAST(%s as DECIMAL(%s,%s))', this.escape(expr), p, s);
     }
 
     $toLong(expr) {
         return sprintf('CAST(%s as SIGNED)', this.escape(expr));
+    }
+
+    $uuid() {
+        return 'UUID()';
     }
 
     $toGuid(expr) {
