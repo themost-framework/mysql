@@ -57,13 +57,14 @@ class MySqlFormatter extends SqlFormatter {
     }
 
     $toInt(expr) {
-        return sprintf('CAST(%s as SIGNED)', this.escape(expr));
+        return sprintf('FLOOR(CAST(%s as DECIMAL(19,8)))', this.escape(expr));
     }
 
     $toDouble(expr) {
         return this.$toDecimal(expr, 19, 8);
     }
 
+    // noinspection JSCheckFunctionSignatures
     /**
      * @param {*} expr 
      * @param {number=} precision 
@@ -71,8 +72,8 @@ class MySqlFormatter extends SqlFormatter {
      * @returns 
      */
     $toDecimal(expr, precision, scale) {
-        const p = typeof precision === number ? parseInt(precision,10) : 19;
-        const s = typeof scale === number ? parseInt(scale,10) : 8;
+        const p = typeof precision === 'number' ? Math.floor(precision) : 19;
+        const s = typeof scale === 'number' ? Math.floor(scale) : 8;
         return sprintf('CAST(%s as DECIMAL(%s,%s))', this.escape(expr), p, s);
     }
 
@@ -80,8 +81,29 @@ class MySqlFormatter extends SqlFormatter {
         return sprintf('CAST(%s as SIGNED)', this.escape(expr));
     }
 
+    $uuid() {
+        return 'UUID()';
+    }
+
     $toGuid(expr) {
         return sprintf('BIN_TO_UUID(UNHEX(MD5(%s)))', this.escape(expr));
+    }
+
+    /**
+     * 
+     * @param {('date'|'datetime'|'timestamp')} type 
+     * @returns 
+     */
+    $getDate(type) {
+        switch (type) {
+            case 'date':
+                return 'CURRENT_DATE()';
+            case 'datetime':
+            case 'timestamp':
+                return 'CURRENT_TIMESTAMP()';
+            default:
+                return 'CURRENT_TIMESTAMP()';
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@themost/mysql",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "description": "MOST Web Framework MySQL Data Adapter",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -54,6 +54,8 @@
     "eslint": "^8.15.0",
     "jasmine": "^4.1.0",
     "jasmine-spec-reporter": "^7.0.0",
+    "mathjs": "^13.1.1",
+    "moment": "^2.30.1",
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "rollup": "^2.73.0",
