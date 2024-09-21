@@ -4,7 +4,6 @@ import { MySqlFormatter } from '../src';
 import { Guid } from '@themost/common';
 import { round } from 'mathjs';
 import moment from 'moment/moment';
-import './query-compat';
 
 describe('Type Casting', () => {
 

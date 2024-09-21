@@ -1,10 +1,10 @@
-import { QueryExpression } from '@themost/query';
+import { SqlFormatter, QueryExpression } from '@themost/query';
 
-if (typeof QueryExpression.prototype.formatInsert === 'function') {
-    const superFormatInsert = QueryExpression.prototype.formatInsert;
+if (typeof SqlFormatter.prototype.formatInsert === 'function') {
+    const superFormatInsert = SqlFormatter.prototype.formatInsert;
     if (/if\s+\(\w+\s+instanceof\s+QueryExpression\)/gm.test(superFormatInsert.toString()) === false) {
-        QueryExpression.prototype.formatInsert = function (expr) {
-            if (expr.$insert) {
+        SqlFormatter.prototype.formatInsert = function (expr) {
+            if (expr && expr.$insert) {
                 const [entity] = Object.keys(expr.$insert);
                 if (entity) {
                     const innerExpr = expr.$insert[entity];
