@@ -57,7 +57,7 @@ class MySqlFormatter extends SqlFormatter {
     }
 
     $toInt(expr) {
-        return sprintf('CAST(%s as SIGNED)', this.escape(expr));
+        return sprintf('FLOOR(CAST(%s as DECIMAL(19,8)))', this.escape(expr));
     }
 
     $toDouble(expr) {
@@ -87,6 +87,23 @@ class MySqlFormatter extends SqlFormatter {
 
     $toGuid(expr) {
         return sprintf('BIN_TO_UUID(UNHEX(MD5(%s)))', this.escape(expr));
+    }
+
+    /**
+     * 
+     * @param {('date'|'datetime'|'timestamp')} type 
+     * @returns 
+     */
+    $getDate(type) {
+        switch (type) {
+            case 'date':
+                return 'CURRENT_DATE()';
+            case 'datetime':
+            case 'timestamp':
+                return 'CURRENT_TIMESTAMP()';
+            default:
+                return 'CURRENT_TIMESTAMP()';
+        }
     }
 }
 
