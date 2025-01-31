@@ -55,12 +55,10 @@ class TestApplication extends DataApplication {
         // add adapter type
         const name = 'MySQL Data Adapter';
         const invariantName = 'mysql';
-        Object.assign(dataConfiguration.adapterTypes, {
-            mysql: {
-                name,
-                invariantName,
-                createInstance
-            }
+        dataConfiguration.adapterTypes.set(invariantName, {
+            name,
+            invariantName,
+            createInstance
         });
         dataConfiguration.adapters.push({
             name: 'master',

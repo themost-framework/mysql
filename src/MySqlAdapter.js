@@ -5,6 +5,7 @@ import { sprintf } from 'sprintf-js';
 import { QueryExpression, QueryField } from '@themost/query';
 import { TraceUtils } from '@themost/common';
 import { MySqlFormatter, zeroPad } from './MySqlFormatter';
+import { AsyncSeriesEventEmitter } from '@themost/events';
 
 /**
  * @class
@@ -35,7 +36,8 @@ class MySqlAdapter {
          * @type {boolean}
          */
         this.connectionPooling = false;
-
+        this.executing = new AsyncSeriesEventEmitter();
+        this.executed = new AsyncSeriesEventEmitter();
     }
 
     /**
@@ -427,6 +429,9 @@ class MySqlAdapter {
                 break;
             case 'Short':
                 s = 'smallint(6)';
+                break;
+            case 'Json':
+                s = 'JSON';
                 break;
             default:
                 s = 'int(11)';

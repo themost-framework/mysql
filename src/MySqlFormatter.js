@@ -1,6 +1,6 @@
 // MOST Web Framework Codename Zero Gravity Copyright (c) 2017-2022, THEMOST LP All rights reserved
 import { sprintf } from 'sprintf-js';
-import { SqlFormatter } from '@themost/query';
+import { SqlFormatter, QueryField } from '@themost/query';
 
 function zeroPad(number, length) {
     number = number || 0;
@@ -104,6 +104,56 @@ class MySqlFormatter extends SqlFormatter {
             default:
                 return 'CURRENT_TIMESTAMP()';
         }
+    }
+
+    /**
+     * @param {*} expr
+     * @return {string}
+     */
+    $jsonGet(expr) {
+        if (typeof expr.$name !== 'string') {
+            throw new Error('Invalid json expression. Expected a string');
+        }
+        const parts = expr.$name.split('.');
+        const extract = this.escapeName(parts.splice(0, 2).join('.'));
+        return `json_extract(${extract}, '$.${parts.join('.')}')`;
+    }
+
+    /**
+     * @param {*} expr
+     * @return {string}
+     */
+    $jsonArray(expr) {
+        return `json_each(${this.escapeName(expr)})`;
+    }
+
+    /**
+     * @param {...*} expr
+     */
+    // eslint-disable-next-line no-unused-vars
+    $jsonObject(expr) {
+        // expected an array of QueryField objects
+        const args = Array.from(arguments).reduce((previous, current) => {
+            // get the first key of the current object
+            let [name] = Object.keys(current);
+            let value;
+            // if the name is not a string then throw an error
+            if (typeof name !== 'string') {
+                throw new Error('Invalid json object expression. The attribute name cannot be determined.');
+            }
+            // if the given name is a dialect function (starts with $) then use the current value as is
+            // otherwise create a new QueryField object
+            if (name.startsWith('$')) {
+                value = new QueryField(current[name]);
+                name = value.getName();
+            } else {
+                value = current instanceof QueryField ? new QueryField(current[name]) : current[name];
+            }
+            // escape json attribute name and value
+            previous.push(this.escape(name), this.escape(value));
+            return previous;
+        }, []);
+        return `JSON_OBJECT(${args.join(',')})`;
     }
 }
 
