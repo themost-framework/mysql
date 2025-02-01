@@ -1,5 +1,4 @@
 import { babel } from '@rollup/plugin-babel';
-import commonjs from '@rollup/plugin-commonjs';
 import * as pkg from './package.json';
 import dts from 'rollup-plugin-dts';
 
@@ -13,8 +12,9 @@ export default [
         },
         external: Object.keys(pkg.dependencies).concat(Object.keys(pkg.peerDependencies)),
         plugins: [
-            commonjs(),
-            babel({ babelHelpers: 'bundled' })
+            babel({
+                babelHelpers: 'bundled' 
+            })
         ]
     },
     {
@@ -25,7 +25,9 @@ export default [
             sourcemap: true
         },
         external: Object.keys(pkg.dependencies).concat(Object.keys(pkg.peerDependencies)),
-        plugins: [babel({ babelHelpers: 'bundled' })]
+        plugins: [babel({
+             babelHelpers: 'bundled'
+            })]
     },
     {
         input: 'src/index.d.ts',

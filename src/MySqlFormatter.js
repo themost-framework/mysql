@@ -131,6 +131,15 @@ class MySqlFormatter extends SqlFormatter {
      * @param {...*} expr
      */
     // eslint-disable-next-line no-unused-vars
+    $json(expr) {
+        const args = Array.from(arguments);
+        return this.$jsonObject(...args);
+    }
+
+    /**
+     * @param {...*} expr
+     */
+    // eslint-disable-next-line no-unused-vars
     $jsonObject(expr) {
         // expected an array of QueryField objects
         const args = Array.from(arguments).reduce((previous, current) => {

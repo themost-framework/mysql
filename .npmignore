@@ -17,6 +17,7 @@ coverage
 # build
 rollup.config.js
 babel.config.js
+jsconfig.json
 
 # github
 .github
