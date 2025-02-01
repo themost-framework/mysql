@@ -1,6 +1,10 @@
 import { DataAdapterBase, DataAdapterBaseHelper } from '@themost/common';
+import { AsyncSeriesEventEmitter } from '@themost/events';
 
 export declare class MySqlAdapter implements DataAdapterBase, DataAdapterBaseHelper {
+    executing: AsyncSeriesEventEmitter<{target: SqliteAdapter, query: (string|QueryExpression), params?: unknown[]}>;
+    executed: AsyncSeriesEventEmitter<{target: SqliteAdapter, query: (string|QueryExpression), params?: unknown[], results: uknown[]}>;
+
     constructor(options?: any);
     rawConnection?: any;
     options?: any;
