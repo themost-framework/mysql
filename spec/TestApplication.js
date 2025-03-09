@@ -75,14 +75,20 @@ class TestApplication extends DataApplication {
     }
     async tryCreateDatabase() {
         let context = new NamedDataContext('master');
-        context.getConfiguration = () => {
-            return this.configuration;
-        };
-        const exists = await context.db.database(testConnectionOptions.database).existsAsync();
-        if (exists === false) {
-            await context.db.executeAsync(`CREATE DATABASE ${testConnectionOptions.database};`);
+        try {
+            context.getConfiguration = () => {
+                return this.configuration;
+            };
+            const exists = await context.db.database(testConnectionOptions.database).existsAsync();
+            if (exists === false) {
+                await context.db.executeAsync(`CREATE DATABASE ${testConnectionOptions.database};`);
+            }
+        } finally {
+            if (context) {
+                await context.finalizeAsync();
+            }
         }
-        await context.db.closeAsync();
+        
     }
 
     async finalize() {
@@ -265,11 +271,10 @@ class TestApplication extends DataApplication {
                 version: '1.0'
             }).into('migrations'));
             await context.finalizeAsync();
-        } catch (error) {
+        } finally {
             if (context) {
                 await context.finalizeAsync();
             }
-            throw error;
         }
     }
 

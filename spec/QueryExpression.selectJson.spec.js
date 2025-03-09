@@ -148,7 +148,6 @@ describe('SqlFormatter', () => {
         await app.finalize();
     });
     beforeEach(async () => {
-        await context.finalizeAsync();
     });
 
     it('should select json field', async () => {
