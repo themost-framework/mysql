@@ -1,5 +1,6 @@
 import { DataAdapterBase, DataAdapterBaseHelper } from '@themost/common';
 import { AsyncSeriesEventEmitter } from '@themost/events';
+import { SqlFormatter } from '@themost/query';
 
 export declare class MySqlAdapter implements DataAdapterBase, DataAdapterBaseHelper {
     executing: AsyncSeriesEventEmitter<{target: SqliteAdapter, query: (string|QueryExpression), params?: unknown[]}>;
@@ -27,4 +28,5 @@ export declare class MySqlAdapter implements DataAdapterBase, DataAdapterBaseHel
     view(name: string): MySqlAdapterView;
     indexes(name: string): MySqlAdapterIndexes;
     database(name: string): MySqlAdapterDatabase;
+    getFormatter(): SqlFormatter;
 }

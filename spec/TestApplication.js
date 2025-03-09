@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import {DataApplication, DataConfigurationStrategy, NamedDataContext, DataCacheStrategy, DataContext, ODataModelBuilder, ODataConventionModelBuilder} from '@themost/data';
-import { createInstance, MySqlFormatter } from '../src';
+import { createInstance, MySqlFormatter } from '@themost/mysql';
 import { TraceUtils, LangUtils } from '@themost/common';
 import { QueryExpression } from '@themost/query';
 import { SqliteAdapter } from '@themost/sqlite';
@@ -75,19 +75,27 @@ class TestApplication extends DataApplication {
     }
     async tryCreateDatabase() {
         let context = new NamedDataContext('master');
-        context.getConfiguration = () => {
-            return this.configuration;
-        };
-        const exists = await context.db.database(testConnectionOptions.database).existsAsync();
-        if (exists === false) {
-            await context.db.executeAsync(`CREATE DATABASE ${testConnectionOptions.database};`);
+        try {
+            context.getConfiguration = () => {
+                return this.configuration;
+            };
+            const exists = await context.db.database(testConnectionOptions.database).existsAsync();
+            if (exists === false) {
+                await context.db.executeAsync(`CREATE DATABASE ${testConnectionOptions.database};`);
+            }
+        } finally {
+            if (context) {
+                await context.finalizeAsync();
+            }
         }
-        await context.db.closeAsync();
+        
     }
 
     async finalize() {
         const service = this.getConfiguration().getStrategy(DataCacheStrategy);
+        // noinspection JSUnresolvedReference
         if (typeof service.finalize === 'function') {
+            // noinspection JSUnresolvedReference
             await service.finalize();
         }
     }
@@ -99,9 +107,10 @@ class TestApplication extends DataApplication {
         const context = this.createContext();
         try {
             await func(context);
-        } catch (err) {
-            await context.finalizeAsync();
-            throw err;
+        } finally {
+            if (context) {
+                await context.finalizeAsync();
+            }
         }
     }
 
@@ -208,7 +217,6 @@ class TestApplication extends DataApplication {
                 return item.abstract ? false : true;
             });
             const sourceAdapter = new SqliteAdapter(sourceConnectionOptions);
-            const formatter = new MySqlFormatter();
             for (let entityType of entityTypes) {
                 TraceUtils.log(`Upgrading ${entityType.name}`);
                 await new Promise((resolve, reject) => {
@@ -263,11 +271,10 @@ class TestApplication extends DataApplication {
                 version: '1.0'
             }).into('migrations'));
             await context.finalizeAsync();
-        } catch (error) {
+        } finally {
             if (context) {
                 await context.finalizeAsync();
             }
-            throw error;
         }
     }
 

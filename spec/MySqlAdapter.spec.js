@@ -65,7 +65,7 @@ describe('MySqlAdapter', () => {
             expect(exists).toBeTruthy();
             // get columns
             const columns = await db.table('Table1').columnsAsync();
-            expect(columns).toBeInstanceOf(Array);
+            expect(Array.isArray(columns)).toBeTruthy();
             let column = columns.find((col) => col.name === 'id');
             expect(column).toBeTruthy();
             expect(column.nullable).toBeFalsy();
@@ -108,7 +108,7 @@ describe('MySqlAdapter', () => {
             ]);
             // get columns
             let columns = await db.table('Table2').columnsAsync();
-            expect(columns).toBeInstanceOf(Array);
+            expect(Array.isArray(columns)).toBeTruthy();
             let column = columns.find((col) => col.name === 'description');
             expect(column).toBeTruthy();
 
@@ -205,7 +205,7 @@ describe('MySqlAdapter', () => {
             expect(exists).toBeTruthy();
 
             let list = await db.indexes('Table1').listAsync();
-            expect(list).toBeInstanceOf(Array);
+            expect(Array.isArray(list)).toBeTruthy();
             exists = list.findIndex((index) => index.name === 'idx_name') < 0;
 
             await db.indexes('Table1').createAsync('idx_name', [
@@ -213,14 +213,14 @@ describe('MySqlAdapter', () => {
             ]);
 
             list = await db.indexes('Table1').listAsync();
-            expect(list).toBeInstanceOf(Array);
+            expect(Array.isArray(list)).toBeTruthy();
             exists = list.findIndex((index) => index.name === 'idx_name') >= 0;
             expect(exists).toBeTruthy();
 
             await db.indexes('Table1').dropAsync('idx_name');
 
             list = await db.indexes('Table1').listAsync();
-            expect(list).toBeInstanceOf(Array);
+            expect(Array.isArray(list)).toBeTruthy();
             exists = list.findIndex((index) => index.name === 'idx_name') >= 0;
             expect(exists).toBeFalsy();
 
