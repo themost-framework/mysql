@@ -5,15 +5,18 @@ import { MySqlFormatter } from '../src';
 import SimpleOrderSchema from './config/models/SimpleOrder.json';
 import {TestApplication} from './TestApplication';
 
+
 /**
- * @param { import('../src').SqliteAdapter } db
+ * @param { import('../src').MySqlAdapter } db
  * @returns {Promise<void>}
  */
 async function createSimpleOrders(db) {
     const { source } = SimpleOrderSchema;
     const exists = await db.table(source).existsAsync();
     if (!exists) {
-        await db.table(source).createAsync(SimpleOrderSchema.fields);
+        await db.table(source).createAsync(SimpleOrderSchema.fields);    
+    } else {
+        return;
     }
     // get some orders
     const orders = await db.executeAsync(
@@ -57,7 +60,19 @@ async function createSimpleOrders(db) {
                 return {id, streetAddress, postalCode, addressLocality, addressCountry, telephone };
             }), []
     );
-    // get
+
+    const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+    
+    const getRandomItems = (array, numItems) => {
+        const shuffledArray = shuffleArray([...array]);
+        return shuffledArray.slice(0, numItems);
+    };
     const items = orders.map((order) => {
         const { orderDate, discount, discountCode, orderNumber, paymentDue,
         dateCreated, dateModified, createdBy, modifiedBy } = order;
@@ -69,6 +84,8 @@ async function createSimpleOrders(db) {
             customer.address = postalAddresses.find((x) => x.id === customer.address);
             delete customer.address?.id;
         }
+        // get 2 random payment methods
+        const additionalPaymentMethods = getRandomItems(paymentMethods, 2);
         return {
             orderDate,
             discount,
@@ -78,6 +95,7 @@ async function createSimpleOrders(db) {
             orderStatus,
             orderedItem,
             paymentMethod,
+            additionalPaymentMethods,
             customer,
             dateCreated,
             dateModified,
