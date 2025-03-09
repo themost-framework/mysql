@@ -30,6 +30,7 @@
   "dependencies": {
     "@themost/events": "^1.5.0",
     "async": "^2.6.4",
+    "lodash": "^4.17.21",
     "mysql2": "^3.9.2",
     "sprintf-js": "^1.1.2"
   },
@@ -53,6 +54,7 @@
     "@themost/query": "^2.14.7",
     "@themost/sqlite": "^2.9.3",
     "@types/jasmine": "^4.0.3",
+    "@types/lodash": "^4.17.16",
     "@types/sprintf-js": "^1.1.2",
     "dotenv": "^16.0.1",
     "eslint": "^8.15.0",
