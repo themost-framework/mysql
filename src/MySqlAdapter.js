@@ -100,7 +100,7 @@ class MySqlAdapter {
     close(callback) {
         const self = this;
         callback = callback || function () { };
-        if (!self.rawConnection)
+        if (self.rawConnection == null)
             return;
         if (self.connectionPooling) {
             self.rawConnection.release();
@@ -109,10 +109,10 @@ class MySqlAdapter {
         else {
             self.rawConnection.end(function (err) {
                 if (err) {
-                    TraceUtils.log(err);
-                    //do nothing
-                    self.rawConnection = null;
+                    TraceUtils.error('An error occurred while closing database connection');
+                    TraceUtils.error(err);
                 }
+                self.rawConnection = null;
                 callback();
             });
         }
@@ -330,7 +330,7 @@ class MySqlAdapter {
             }
             else {
                 //format query expression or any object that may be act as query expression
-                const formatter = new MySqlFormatter();
+                const formatter = this.getFormatter();
                 sql = formatter.format(query);
             }
             //validate sql statement
@@ -779,7 +779,7 @@ class MySqlAdapter {
                 if (strPKFields.length > 0) {
                     strFields += ', ' + sprintf('PRIMARY KEY (%s)', strPKFields);
                 }
-                const formatter = new MySqlFormatter();
+                const formatter = self.getFormatter();
                 const sql = sprintf('CREATE TABLE %s (%s)', formatter.escapeName(name), strFields);
                 self.execute(sql, null, function (err) {
                     callback(err);
@@ -811,7 +811,7 @@ class MySqlAdapter {
                     //do nothing
                     return callback();
                 }
-                const formatter = new MySqlFormatter();
+                const formatter = self.getFormatter();
                 const strTable = formatter.escapeName(name);
                 const statements = fields.map(function (x) {
                     return MySqlAdapter.format('ALTER TABLE ' + strTable + ' ADD COLUMN `%f` %t', x);
@@ -850,7 +850,7 @@ class MySqlAdapter {
                     //do nothing
                     return callback();
                 }
-                const formatter = new MySqlFormatter();
+                const formatter = self.getFormatter();
                 const strTable = formatter.escapeName(name);
                 const statements = fields.map(function (x) {
                     return MySqlAdapter.format('ALTER TABLE ' + strTable + ' MODIFY COLUMN `%f` %t', x);
@@ -932,7 +932,7 @@ class MySqlAdapter {
                         }
                         const exists = (result[0].count > 0);
                         if (exists) {
-                            const formatter = new MySqlFormatter();
+                            const formatter = self.getFormatter();
                             const sql = sprintf('DROP VIEW %s', formatter.escapeName(name));
                             return self.execute(sql, [], function (err) {
                                 if (err) {
@@ -966,7 +966,7 @@ class MySqlAdapter {
                             return tr(err); 
                         }
                         try {
-                            const formatter = new MySqlFormatter();
+                            const formatter = self.getFormatter();
                             let sql = sprintf('CREATE VIEW %s AS ', formatter.escapeName(name));
                             sql += formatter.format(q);
                             self.execute(sql, [], tr);
@@ -993,7 +993,8 @@ class MySqlAdapter {
     }
 
     indexes(table) {
-        const self = this, formatter = new MySqlFormatter();
+        const self = this;
+        const formatter = self.getFormatter();
         return {
             list: function (callback) {
                 const this1 = this;
@@ -1184,6 +1185,11 @@ class MySqlAdapter {
             }
         }
      }
+
+     getFormatter() {
+        return new MySqlFormatter();
+     }
+
 }
 
 export {
