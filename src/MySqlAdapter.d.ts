@@ -2,6 +2,16 @@ import { DataAdapterBase, DataAdapterBaseHelper } from '@themost/common';
 import { AsyncSeriesEventEmitter } from '@themost/events';
 import { SqlFormatter } from '@themost/query';
 
+export declare interface DataAdapterTables {
+    list(callback: (err: Error, result: { name: string }[]) => void): void;
+    listAsync(): Promise<{ name: string }[]>;
+}
+
+export declare interface DataAdapterViews {
+    list(callback: (err: Error, result: { name: string }[]) => void): void;
+    listAsync(): Promise<{ name: string }[]>;
+}
+
 export declare class MySqlAdapter implements DataAdapterBase, DataAdapterBaseHelper {
     executing: AsyncSeriesEventEmitter<{target: SqliteAdapter, query: (string|QueryExpression), params?: unknown[]}>;
     executed: AsyncSeriesEventEmitter<{target: SqliteAdapter, query: (string|QueryExpression), params?: unknown[], results: uknown[]}>;
@@ -26,6 +36,8 @@ export declare class MySqlAdapter implements DataAdapterBase, DataAdapterBaseHel
     executeAsync(query: any, values: any): Promise<any>;
     table(name: string): MySqlAdapterTable;
     view(name: string): MySqlAdapterView;
+    tables(): DataAdapterTables;
+    views(): DataAdapterViews;
     indexes(name: string): MySqlAdapterIndexes;
     database(name: string): MySqlAdapterDatabase;
     getFormatter(): SqlFormatter;
