@@ -992,6 +992,56 @@ class MySqlAdapter {
         };
     }
 
+    tables() {
+        const self = this;
+        return {
+            list: function (callback) {
+                self.execute('SELECT `TABLE_NAME` AS `name` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_TYPE`=\'BASE TABLE\'', null, function (err, results) {
+                    if (err) {
+                        return callback(err);
+                    }
+                    return callback(null, results);
+                });
+            },
+            listAsync: function () {
+                const thisArg = this;
+                return new Promise((resolve, reject) => {
+                    thisArg.list((err, results) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(results);
+                    });
+                });
+            }
+        }
+    }
+
+    views() {
+        const self = this;
+        return {
+            list: function (callback) {
+                self.execute('SELECT `TABLE_NAME` AS `name` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_TYPE`=\'VIEW\'', null, function (err, results) {
+                    if (err) {
+                        return callback(err);
+                    }
+                    return callback(null, results);
+                });
+            },
+            listAsync: function () {
+                const thisArg = this;
+                return new Promise((resolve, reject) => {
+                    thisArg.list((err, results) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        return resolve(results);
+                    });
+                });
+            }
+        }
+    }
+
     indexes(table) {
         const self = this;
         const formatter = self.getFormatter();
