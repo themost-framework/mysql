@@ -82,6 +82,8 @@ class TestApplication extends DataApplication {
             const exists = await context.db.database(testConnectionOptions.database).existsAsync();
             if (exists === false) {
                 await context.db.executeAsync(`CREATE DATABASE ${testConnectionOptions.database};`);
+            } else {
+                TraceUtils.log(`Database ${testConnectionOptions.database} already exists.`);
             }
         } finally {
             if (context) {
