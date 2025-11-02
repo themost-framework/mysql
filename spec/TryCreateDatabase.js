@@ -8,7 +8,7 @@ import {TraceUtils} from '@themost/common';
     await app.trySetData();
 })().then(() => {
     process.exit(0);
-}).catch((e) => {
-    TraceUtils.error(e);
+}).catch((error) => {
+    TraceUtils.error(error);
     process.exit(1);
 })
