@@ -210,6 +210,21 @@ class MySqlFormatter extends SqlFormatter {
      */
     // eslint-disable-next-line no-unused-vars
     $jsonObject(expr) {
+        if (expr.$select) {
+            // get select fields
+            const args = Object.keys(expr.$select).reduce((previous, key) => {
+                previous.push.apply(previous, expr.$select[key]);
+                return previous;
+            }, []);
+            const [key] = Object.keys(expr.$select);
+            // prepare select expression to return json array
+            expr.$select[key] = [
+                {
+                    $jsonObject: args // use json_object function
+                }
+            ];
+            return `(${this.format(expr)})`;
+        }
         // expected an array of QueryField objects
         const args = Array.from(arguments).reduce((previous, current) => {
             // get the first key of the current object

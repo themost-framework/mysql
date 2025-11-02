@@ -8,6 +8,43 @@ import { MySqlFormatter, zeroPad } from './MySqlFormatter';
 import { AsyncSeriesEventEmitter, before, after } from '@themost/events';
 
 /**
+ *
+ * @param {{target: SqliteAdapter, query: string|QueryExpression, results: Array<*>}} event
+ */
+function onReceivingJsonObject(event) {
+    if (typeof event.query === 'object' && event.query.$select) {
+        // try to identify the usage of a $jsonObject dialect and format result as JSON
+        const { $select: select } = event.query;
+        if (select) {
+            const attrs = Object.keys(select).reduce((previous, current) => {
+                const fields = select[current];
+                previous.push(...fields);
+                return previous;
+            }, []).filter((x) => {
+                const [key] = Object.keys(x);
+                if (typeof key !== 'string') {
+                    return false;
+                }
+                return x[key].$jsonObject != null || x[key].$jsonArray != null  || x[key].$jsonGroupArray != null;
+            }).map((x) => {
+                return Object.keys(x)[0];
+            });
+            if (attrs.length > 0) {
+                if (Array.isArray(event.results)) {
+                    for(const result of event.results) {
+                        attrs.forEach((attr) => {
+                            if (Object.prototype.hasOwnProperty.call(result, attr) && typeof result[attr] === 'string') {
+                                    result[attr] = JSON.parse(result[attr]);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
  * @class
  * @constructor
  * @augments DataAdapter
@@ -38,6 +75,7 @@ class MySqlAdapter {
         this.connectionPooling = false;
         this.executing = new AsyncSeriesEventEmitter();
         this.executed = new AsyncSeriesEventEmitter();
+        this.executed.subscribe(onReceivingJsonObject);
     }
 
     /**
@@ -308,12 +346,13 @@ class MySqlAdapter {
             return callback(err);
         });
     })
-    @after(({target, args}, callback) => {
+    @after(({target, args, result: results}, callback) => {
         const [query, params] = args;
         void target.executed.emit({
             target,
             query,
-            params
+            params,
+            results
         }).then(() => {
             return callback();
         }).catch((err) => {
