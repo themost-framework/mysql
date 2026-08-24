@@ -55,11 +55,25 @@ class TestApplication extends DataApplication {
         // add adapter type
         const name = 'MySQL Data Adapter';
         const invariantName = 'mysql';
-        dataConfiguration.adapterTypes.set(invariantName, {
-            name,
-            invariantName,
-            createInstance
-        });
+        if (dataConfiguration.adapterTypes instanceof Map) {
+            dataConfiguration.adapterTypes.set(invariantName, {
+                name,
+                invariantName,
+                createInstance
+            });
+        } else {
+            Object.defineProperty(dataConfiguration.adapterTypes, invariantName, {
+                value: {
+                    name,
+                    invariantName,
+                    createInstance
+                },
+                configurable: true,
+                enumerable: true,
+                writable: true
+            });
+        }
+
         dataConfiguration.adapters.push({
             name: 'master',
             invariantName: 'mysql',
