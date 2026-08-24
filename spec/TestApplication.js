@@ -121,7 +121,7 @@ class TestApplication extends DataApplication {
      * @param {TestContextFunction} func 
      * @returns {Promise<void>}
      */
-    executeInTestTranscaction(func) {
+    executeInTestTransaction(func) {
         return this.executeInTestContext((context) => {
             return new Promise((resolve, reject) => {
                 // start transaction

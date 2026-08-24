@@ -152,7 +152,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should select json field', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = new QueryEntity('SimpleOrders');
             const query = new QueryExpression();
             query.resolvingJoinMember.subscribe(onResolvingJsonMember);
@@ -181,7 +181,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should select nested json field', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = new QueryEntity('SimpleOrders');
             const query = new QueryExpression();
             query.resolvingJoinMember.subscribe(onResolvingJsonMember);
@@ -214,7 +214,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should select nested json field with method', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = new QueryEntity('SimpleOrders');
             const query = new QueryExpression();
             query.resolvingJoinMember.subscribe(onResolvingJsonMember);
@@ -242,7 +242,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should select json object', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = new QueryEntity('SimpleOrders');
             const query = new QueryExpression();
             query.resolvingJoinMember.subscribe(onResolvingJsonMember);
@@ -270,7 +270,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should select and return attribute from json field using closures', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = context.model('SimpleOrder').silent();
             const results = await Orders.select((x) => {
                 return {
@@ -289,7 +289,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should filter results using attribute extracted from json field', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = context.model('SimpleOrder').silent();
             const results = await Orders.select((x) => {
                 return {
@@ -309,7 +309,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should select and return attribute from json field', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = context.model('SimpleOrder').silent();
             const q = await Orders.filterAsync({
                 $select: 'id,customer/description as customer,year(orderedItem/releaseDate) as releaseYear',
@@ -324,7 +324,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should filter using attribute from json field', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = context.model('SimpleOrder').silent();
             const q = await Orders.filterAsync({
                 $select: 'id,customer/id as customerIdentifier, customer/description as customer,year(orderedItem/releaseDate) as releaseYear',
@@ -340,7 +340,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should use jsonObject', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const Orders = context.model('Order').silent();
             const q = Orders.select(
                 'id', 'orderedItem', 'orderDate'
@@ -370,7 +370,7 @@ describe('SqlFormatter', () => {
     });
 
     it('should use jsonObject in ad-hoc queries', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             const {viewAdapter: Orders} = context.model('Order');
             const {viewAdapter: Customers} = context.model('Person');
             const {viewAdapter: OrderStatusTypes} = context.model('OrderStatusType');
@@ -687,7 +687,7 @@ describe('SqlFormatter', () => {
                 }
             })
         ).from(People).where('email').equal(context.user.name);
-        const [item] = await context.db.executeAsync(query);
+        const [item] = await context.db.executeAsync(query, []);
         expect(item).toBeTruthy();
     });
 
@@ -709,7 +709,7 @@ describe('SqlFormatter', () => {
                 }
             })
         ).from(People).where('email').equal(context.user.name);
-        const [item] = await context.db.executeAsync(query);
+        const [item] = await context.db.executeAsync(query, []);
         expect(item).toBeTruthy();
         expect(Array.isArray(item.tags)).toBeTruthy();
         expect(item.tags).toEqual([ 'user', 'customer', 'admin' ]);
@@ -748,6 +748,44 @@ describe('SqlFormatter', () => {
         expect(keys.length).toBe(2);
         expect(keys).toContain('streetAddress');
         expect(keys).toContain('postalCode');
+    });
+
+    it('should use jsonArray and format query expressions', async () => {
+        await app.executeInTestTransaction(async (context) => {
+            const People = new QueryEntity('PersonData');
+            const Products = new QueryEntity('ProductData');
+            const Orders = new QueryEntity('OrderData');
+            const query = new QueryExpression().select(
+                'id',
+                'familyName',
+                'givenName',
+                'jobTitle',
+                'email',
+                new QueryField({
+                    products: {
+                        $jsonGroupArray: [
+                            new QueryExpression().select(
+                                new QueryField('name').from(Products)
+                            ).from(Products).join(Orders).with(
+                                new QueryExpression().where(
+                                    new QueryField('orderedItem').from(Orders)
+                                ).equal(
+                                    new QueryField('id').from(Products)
+                                )
+                            ).where(
+                                new QueryField('customer').from(Orders)
+                            ).equal(
+                                new QueryField('id').from(People)
+                            )
+                        ]
+                    }
+                })
+            ).from(People).where('email').equal('eric.thomas@example.com');
+            const [item] = await context.db.executeAsync(query, []);
+            expect(item).toBeTruthy();
+            expect(item.products).toBeTruthy();
+            expect(Array.isArray(item.products)).toEqual(true);
+        });
     });
 
 });

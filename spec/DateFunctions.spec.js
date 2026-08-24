@@ -22,7 +22,7 @@ describe('DateFunctions', () => {
     });
 
     it('should use getDate()', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             let items = await context.model('Order')
                 .asQueryable().where('orderDate').getDate().equal('2019-04-15').silent().getItems();
             expect(Array.isArray(items)).toBeTruthy();
@@ -36,7 +36,7 @@ describe('DateFunctions', () => {
     });
 
     it('should use getDay()', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             let items = await context.model('Order')
                 .asQueryable().where('orderDate').getDay().equal(15).silent().getItems();
             expect(Array.isArray(items)).toBeTruthy();
@@ -48,7 +48,7 @@ describe('DateFunctions', () => {
     });
 
     it('should use getMonth()', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             let items = await context.model('Order')
                 .asQueryable().where('orderDate').getMonth().equal(4).silent().getItems();
             expect(Array.isArray(items)).toBeTruthy();
@@ -60,7 +60,7 @@ describe('DateFunctions', () => {
     });
 
     it('should use getFullYear()', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             let items = await context.model('Order')
                 .asQueryable().where('orderDate').getFullYear().equal(2019).silent().getItems();
             expect(Array.isArray(items)).toBeTruthy();
@@ -72,7 +72,7 @@ describe('DateFunctions', () => {
     });
 
     it('should use getHours()', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             let items = await context.model('Order')
                 .asQueryable().where('orderDate').getHours().equal(14).silent().getItems();
             expect(Array.isArray(items)).toBeTruthy();
@@ -84,7 +84,7 @@ describe('DateFunctions', () => {
     });
 
     it('should use getMinutes()', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             let items = await context.model('Order')
                 .asQueryable().where('orderDate').getMinutes().equal(45).silent().getItems();
             expect(Array.isArray(items)).toBeTruthy();
@@ -96,7 +96,7 @@ describe('DateFunctions', () => {
     });
 
     it('should use getSeconds()', async () => {
-        await app.executeInTestTranscaction(async (context) => {
+        await app.executeInTestTransaction(async (context) => {
             let items = await context.model('Order')
                 .asQueryable().where('orderDate').getSeconds().equal(45).silent().getItems();
             expect(Array.isArray(items)).toBeTruthy();
