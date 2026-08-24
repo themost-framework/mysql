@@ -5,6 +5,9 @@ babel.config.js
 coverage
 .nyc_output
 .env
+jest.config.js
+jest.setup.js
+jsconfig.json
 
 # eslint
 .eslintrc

@@ -1,4 +1,6 @@
 // MOST Web Framework Codename Zero Gravity Copyright (c) 2017-2022, THEMOST LP All rights reserved
+// noinspection JSCheckFunctionSignatures
+
 import mysql from 'mysql2';
 import async from 'async';
 import { sprintf } from 'sprintf-js';
@@ -9,7 +11,7 @@ import { AsyncSeriesEventEmitter, before, after } from '@themost/events';
 
 /**
  *
- * @param {{target: SqliteAdapter, query: string|QueryExpression, results: Array<*>}} event
+ * @param {{target: MySqlAdapter, query: string|QueryExpression, results: Array<*>}} event
  */
 function onReceivingJsonObject(event) {
     if (typeof event.query === 'object' && event.query.$select) {
@@ -47,7 +49,7 @@ function onReceivingJsonObject(event) {
 /**
  * @class
  * @constructor
- * @augments DataAdapter
+ * @augments import('@themost/common').DataAdapterBase
  */
 
 class MySqlAdapter {
@@ -368,7 +370,7 @@ class MySqlAdapter {
                 sql = query;
             }
             else {
-                //format query expression or any object that may be act as query expression
+                //format query expression or any object that may be acted as query expression
                 const formatter = this.getFormatter();
                 sql = formatter.format(query);
             }
@@ -516,7 +518,7 @@ class MySqlAdapter {
 
     /**
      *
-     * @param  {MySqlAdapterMigration} obj - An Object that represents the data model scheme we want to migrate
+     * @param  {import('@themost/common').DataAdapterMigration & { model?: string,description?: string, remove?:Array<*> }} obj - An Object that represents the data model scheme we want to migrate
      * @param {Function} callback
      */
     migrate(obj, callback) {
@@ -567,6 +569,7 @@ class MySqlAdapter {
                     function (arg, cb) {
                         //migration has already been applied (set migration.updated=true)
                         if (arg > 0) {
+                            // noinspection JSUndefinedPropertyAssignment
                             obj.updated = true;
                             return cb(null, -1);
                         }
@@ -1221,7 +1224,7 @@ class MySqlAdapter {
         const self = this;
         return query.replace(/:(\w+)/g, function (txt, key) {
             if (Object.prototype.hasOwnProperty.call(values, key)) {
-                return self.escape(values[key]);
+                return self.getFormatter().escape(values[key]);
             }
             return txt;
         }.bind(this));
@@ -1234,6 +1237,7 @@ class MySqlAdapter {
      */
      database(name) {
         const self = this;
+        const formatter = self.getFormatter();
         return {
             exists: function (callback) {
                 return self.execute('SHOW DATABASES;', [], (err, results) => {
@@ -1255,7 +1259,7 @@ class MySqlAdapter {
                 });
             },
             create: function (callback) {
-                return self.execute(`CREATE DATABASE ${self.escapeName(name)};`, [], (err) => {
+                return self.execute(`CREATE DATABASE ${formatter.escapeName(name)};`, [], (err) => {
                     if (err) {
                         return callback(err);
                     }
