@@ -8,6 +8,7 @@
     "abstract": false,
     "implements": "Enumeration",
     "version": "2.1",
+    "@json.expandable": true,
     "fields": [
         {
             "name": "color",

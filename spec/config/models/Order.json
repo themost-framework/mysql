@@ -179,6 +179,9 @@
             "order": "dateCreated desc"
         }
     ],
+    "eventListeners": [
+        {"type": "./listeners/OnJsonExpandable"}
+    ],
     "privileges": [
         {
             "mask": 15,

@@ -137,11 +137,11 @@ class MySqlFormatter extends SqlFormatter {
      */
     $jsonGroupArray(expr) {
         if (expr instanceof QueryField) {
-            return `JSON_ARRAYAGG(${this.escape(expr)})`;
+            return `COALESCE(JSON_ARRAYAGG(${this.escape(expr)}), JSON_ARRAY())`;
         }
         // noinspection JSUnresolvedReference
         if (expr && expr.$name) {
-            return `JSON_ARRAYAGG(${this.escape(expr)})`;
+            return `COALESCE(JSON_ARRAYAGG(${this.escape(expr)}), JSON_ARRAY())`;
         }
         // noinspection JSUnresolvedReference
         if (expr && expr.$select) {

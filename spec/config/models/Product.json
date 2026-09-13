@@ -8,6 +8,7 @@
     "version": "2.0",
     "inherits": "Thing",
     "caching":"conditional",
+    "@json.expandable": true,
     "fields": [
         {
             "name": "category",

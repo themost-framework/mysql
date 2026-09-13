@@ -750,7 +750,7 @@ describe('SqlFormatter', () => {
         expect(keys).toContain('postalCode');
     });
 
-    it('should use jsonArray and format query expressions', async () => {
+    it('should use jsonGroupArray and format query expressions', async () => {
         await app.executeInTestTransaction(async (context) => {
             const People = new QueryEntity('PersonData');
             const Products = new QueryEntity('ProductData');
@@ -785,7 +785,63 @@ describe('SqlFormatter', () => {
             expect(item).toBeTruthy();
             expect(item.products).toBeTruthy();
             expect(Array.isArray(item.products)).toEqual(true);
+            for (const product of item.products) {
+                expect(typeof product).toBe('string');
+            }
         });
     });
 
+    it('should use jsonArray and format inner select expressions', async () => {
+        await app.executeInTestTransaction(async (context) => {
+            const People = new QueryEntity('PersonData');
+            const Products = new QueryEntity('ProductData');
+            const Orders = new QueryEntity('OrderData');
+            const query = new QueryExpression().select(
+                'id',
+                'familyName',
+                'givenName',
+                'jobTitle',
+                'email',
+                new QueryField({
+                    products: {
+                        $jsonArray: [
+                            new QueryExpression().select(
+                                new QueryField('name').from(Products),
+                                new QueryField('model').from(Products)
+                            ).from(Products).join(Orders).with(
+                                new QueryExpression().where(
+                                    new QueryField('orderedItem').from(Orders)
+                                ).equal(
+                                    new QueryField('id').from(Products)
+                                )
+                            ).where(
+                                new QueryField('customer').from(Orders)
+                            ).equal(
+                                new QueryField('id').from(People)
+                            )
+                        ]
+                    }
+                })
+            ).from(People).where('email').equal('eric.thomas@example.com');
+            const [item] = await context.db.executeAsync(query, []);
+            expect(item).toBeTruthy();
+            expect(item.products).toBeTruthy();
+            expect(Array.isArray(item.products)).toEqual(true);
+            for (const product of item.products) {
+                expect(typeof product).toBe('object');
+            }
+        });
+    });
+
+    it('should use jsonArray with json expandable attribute', async () => {
+        await app.executeInTestTransaction(async (context) => {
+            const Orders = context.model('Order');
+            const items = await Orders.asQueryable().silent().where('customer/email').equal('eric.thomas@example.com').getItems();
+            expect(items).toBeTruthy();
+            expect(Array.isArray(items)).toEqual(true);
+            for (const item of items) {
+                expect(typeof item).toBe('object');
+            }
+        });
+    });
 });
